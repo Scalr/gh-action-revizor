@@ -67,7 +67,7 @@ func doHealthCheck(containerID *string) error {
 	if err != nil || resp.StatusCode != 200 {
 		return fmt.Errorf("Healthcheck error: %s", resp.Status)
 	}
-	log.Println("Healthy")
+	log.Println("Container is ready for use")
 	return nil
 }
 
@@ -108,7 +108,7 @@ func doDelete(containerID string) error {
 	if err != nil || resp.StatusCode != 202 {
 		return fmt.Errorf("Unable to delete the container: %d. %v", resp.StatusCode, err)
 	}
-	log.Printf("Successfuly deleted container %s", containerID)
+	log.Printf("Container %s successfully deleted", containerID)
 	return nil
 }
 
