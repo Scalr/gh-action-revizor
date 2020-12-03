@@ -73,10 +73,9 @@ func doHealthCheck(containerID *string) error {
 
 func doCreate() error {
 	log.Println("Creating revizor container...")
-	// req := newRequest("POST", "/api/containers/", &map[string]interface{}{
-	// 	"branch": "master",
-	// })
-	req := newRequest("POST", "/api/containers/", nil)
+	req := newRequest("POST", "/api/containers/", &map[string]interface{}{
+		"skip_ui": true,
+	})
 	client := &http.Client{Timeout: 600 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
