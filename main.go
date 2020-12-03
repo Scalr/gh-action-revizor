@@ -93,6 +93,7 @@ func doCreate() error {
 		log.Fatal(err)
 	}
 	log.Printf("Created container %s", cont.ID)
+	fmt.Printf("::set-output name=id::%s", cont.ID)
 	for i := 1; i <= 10; i++ {
 		err := doHealthCheck(&cont.ID)
 		if err != nil {
@@ -102,7 +103,6 @@ func doCreate() error {
 			return nil
 		}
 	}
-	fmt.Printf("::set-output name=id::%s", cont.ID)
 	return fmt.Errorf("Container %s is unavilable", cont.ID)
 }
 

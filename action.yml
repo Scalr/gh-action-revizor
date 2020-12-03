@@ -7,6 +7,9 @@ inputs:
   id:
     description: 'Container ID'
     required: false
+outputs:
+  id:
+    description: 'Container ID'
 runs:
   using: 'docker'
   image: 'Dockerfile'
