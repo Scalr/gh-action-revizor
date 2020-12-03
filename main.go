@@ -16,10 +16,7 @@ type container struct {
 	ID string `json:"container_id"`
 }
 
-const (
-	revizorURL = "https://revizor.scalr-labs.net"
-	teURL      = "test-env.scalr.com"
-)
+const teBaseURL = "test-env.scalr.com"
 
 func getEnv(key string) string {
 	value, present := os.LookupEnv(key)
@@ -31,11 +28,9 @@ func getEnv(key string) string {
 }
 
 var (
-	// TODO: move revizorToken to GitHub secrets.
-	revizorToken = getEnv("REVIZOR_TOKEN")
-
-	// TODO: move  API token to GitHub secrets.
-	scalrToken = getEnv("SCALR_TOKEN")
+	revizorBaseURL = getEnv("REVIZOR_URL")
+	revizorToken   = getEnv("REVIZOR_TOKEN")
+	scalrToken     = getEnv("SCALR_TOKEN")
 )
 
 func newRequest(method, path string, payload interface{}) *http.Request {
@@ -51,7 +46,7 @@ func newRequest(method, path string, payload interface{}) *http.Request {
 		}
 		reqBody.Write(jsonEncoded)
 	}
-	req, err := http.NewRequest(method, revizorURL+path, reqBody)
+	req, err := http.NewRequest(method, revizorBaseURL+path, reqBody)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,7 +59,7 @@ func newRequest(method, path string, payload interface{}) *http.Request {
 
 func doHealthCheck(containerID *string) error {
 	// TODO: use ping endpoint
-	url := fmt.Sprintf("https://%s.%s/api/iacp/v3/environments", *containerID, teURL)
+	url := fmt.Sprintf("https://%s.%s/api/iacp/v3/environments", *containerID, teBaseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -107,6 +102,7 @@ func doCreate() error {
 			return nil
 		}
 	}
+	fmt.Printf("::set-output name=id::%s", cont.ID)
 	return fmt.Errorf("Container %s is unavilable", cont.ID)
 }
 
