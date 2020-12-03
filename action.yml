@@ -4,11 +4,11 @@ inputs:
   command:
     description: 'Command to execute'
     required: true
-  id:
+  container_id:
     description: 'Container ID'
     required: false
 outputs:
-  id:
+  container_id:
     description: 'Container ID'
   hostname:
     description: 'TE hostname'
@@ -17,4 +17,4 @@ runs:
   image: 'Dockerfile'
   args:
     - ${{ inputs.command }}
-    - ${{ inputs.id }}
+    - ${{ inputs.container_id }}

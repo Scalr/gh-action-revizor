@@ -93,8 +93,8 @@ func doCreate() error {
 		log.Fatal(err)
 	}
 	log.Printf("Created container %s", cont.ID)
-	fmt.Printf("::set-output name=id::%s", cont.ID)
-	fmt.Printf("::set-output name=hostname::%s.%s", cont.ID, teBaseURL)
+	fmt.Printf("::set-output name=container_id::%s\n", cont.ID)
+	fmt.Printf("::set-output name=hostname::%s.%s\n", cont.ID, teBaseURL)
 	for i := 1; i <= 10; i++ {
 		err := doHealthCheck(&cont.ID)
 		if err != nil {
@@ -104,15 +104,20 @@ func doCreate() error {
 			return nil
 		}
 	}
+	err = doDelete(cont.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return fmt.Errorf("Container %s is unavilable", cont.ID)
 }
 
 func doDelete(containerID string) error {
+	log.Println("Deleting revizor container...")
 	req := newRequest("DELETE", fmt.Sprintf("/api/containers/%s/", containerID), nil)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 202 {
-		return fmt.Errorf("Unable to delete the container: %d", resp.StatusCode)
+		return fmt.Errorf("Unable to delete the container, status code %d", resp.StatusCode)
 	}
 	log.Printf("Container %s successfully deleted", containerID)
 	return nil
