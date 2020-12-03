@@ -21,12 +21,21 @@ const (
 	teURL      = "test-env.scalr.com"
 )
 
+func getEnv(key string) string {
+	value, present := os.LookupEnv(key)
+	if !present {
+		log.Fatalf("No required environment variable: %s", key)
+		return ""
+	}
+	return value
+}
+
 var (
 	// TODO: move revizorToken to GitHub secrets.
-	revizorToken = os.Getenv("REVIZOR_TOKEN")
+	revizorToken = getEnv("REVIZOR_TOKEN")
 
 	// TODO: move  API token to GitHub secrets.
-	scalrToken = os.Getenv("SCALR_TOKEN")
+	scalrToken = getEnv("SCALR_TOKEN")
 )
 
 func newRequest(method, path string, payload interface{}) *http.Request {
@@ -106,7 +115,7 @@ func doDelete(containerID string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 202 {
-		return fmt.Errorf("Unable to delete the container: %d. %v", resp.StatusCode, err)
+		return fmt.Errorf("Unable to delete the container: %d", resp.StatusCode)
 	}
 	log.Printf("Container %s successfully deleted", containerID)
 	return nil
