@@ -1,0 +1,15 @@
+name: 'revizor'
+description: 'revizor CLI'
+inputs:
+  command:
+    description: 'Command to execute'
+    required: true
+  id:
+    description: 'Container ID'
+    required: false
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.command }}
+    - ${{ inputs.id }}
