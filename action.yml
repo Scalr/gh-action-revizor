@@ -10,6 +10,8 @@ inputs:
 outputs:
   id:
     description: 'Container ID'
+  hostname:
+    description: 'TE hostname'
 runs:
   using: 'docker'
   image: 'Dockerfile'

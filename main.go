@@ -18,6 +18,12 @@ type container struct {
 
 const teBaseURL = "test-env.scalr.com"
 
+var (
+	revizorBaseURL = getEnv("REVIZOR_URL")
+	revizorToken   = getEnv("REVIZOR_TOKEN")
+	scalrToken     = getEnv("SCALR_TOKEN")
+)
+
 func getEnv(key string) string {
 	value, present := os.LookupEnv(key)
 	if !present {
@@ -26,12 +32,6 @@ func getEnv(key string) string {
 	}
 	return value
 }
-
-var (
-	revizorBaseURL = getEnv("REVIZOR_URL")
-	revizorToken   = getEnv("REVIZOR_TOKEN")
-	scalrToken     = getEnv("SCALR_TOKEN")
-)
 
 func newRequest(method, path string, payload interface{}) *http.Request {
 	reqBody := bytes.NewBuffer(nil)
@@ -94,6 +94,7 @@ func doCreate() error {
 	}
 	log.Printf("Created container %s", cont.ID)
 	fmt.Printf("::set-output name=id::%s", cont.ID)
+	fmt.Printf("::set-output name=hostname::%s.%s", cont.ID, teBaseURL)
 	for i := 1; i <= 10; i++ {
 		err := doHealthCheck(&cont.ID)
 		if err != nil {
