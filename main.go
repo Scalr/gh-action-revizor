@@ -35,7 +35,6 @@ func getEnv(key string) string {
 
 func newRequest(method, path string, payload interface{}) *http.Request {
 	reqBody := bytes.NewBuffer(nil)
-	// Create a request specific headers map.
 	reqHeaders := make(http.Header)
 	reqHeaders.Set("Authorization", fmt.Sprintf("Token %s", revizorToken))
 	if payload != nil {
@@ -50,7 +49,6 @@ func newRequest(method, path string, payload interface{}) *http.Request {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Set the request specific headers.
 	for k, v := range reqHeaders {
 		req.Header[k] = v
 	}
@@ -58,7 +56,7 @@ func newRequest(method, path string, payload interface{}) *http.Request {
 }
 
 func doHealthCheck(containerID *string) error {
-	// TODO: use ping endpoint
+	// TODO: use ping endpoint within stable profile
 	url := fmt.Sprintf("https://%s.%s/api/iacp/v3/environments", *containerID, teBaseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -69,17 +67,22 @@ func doHealthCheck(containerID *string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 200 {
-		return fmt.Errorf("Healthcheck error: %s", resp.Status)
+		return fmt.Errorf("The healthcheck error: %s", resp.Status)
 	}
-	log.Println("Container is ready for use")
+	log.Printf("The container %s is ready for use", *containerID)
 	return nil
 }
 
 func doCreate() error {
-	log.Println("Creating revizor container...")
+	log.Println("Creating the container...")
 	req := newRequest("POST", "/api/containers/", &map[string]interface{}{
+		// Provider tests do not require an interface,
+		// so we can speed up the container creation.
 		"skip_ui": true,
 	})
+	// Such a large timeout due to the fact that sometimes
+	// the result of creating a container cannot be obtained
+	// for a long time on the server side.
 	client := &http.Client{Timeout: 600 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -92,7 +95,7 @@ func doCreate() error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Created container %s", cont.ID)
+	log.Printf("The container %s has been created", cont.ID)
 	fmt.Printf("::set-output name=container_id::%s\n", cont.ID)
 	fmt.Printf("::set-output name=hostname::%s.%s\n", cont.ID, teBaseURL)
 	for i := 1; i <= 10; i++ {
@@ -108,18 +111,18 @@ func doCreate() error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return fmt.Errorf("Container %s is unavilable", cont.ID)
+	return fmt.Errorf("The container %s was unavailable and was deleted", cont.ID)
 }
 
 func doDelete(containerID string) error {
-	log.Println("Deleting revizor container...")
+	log.Printf("Deleting the container %s...", containerID)
 	req := newRequest("DELETE", fmt.Sprintf("/api/containers/%s/", containerID), nil)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 202 {
-		return fmt.Errorf("Unable to delete the container, status code %d", resp.StatusCode)
+		return fmt.Errorf("Failed to delete the container, status code %d", resp.StatusCode)
 	}
-	log.Printf("Container %s successfully deleted", containerID)
+	log.Printf("The container %s was successfully deleted", containerID)
 	return nil
 }
 
@@ -134,7 +137,11 @@ func main() {
 			log.Fatal(err)
 		}
 	case "delete":
-		err := doDelete(flag.Arg(1))
+		containerID := flag.Arg(1)
+		if len(containerID) == 0 {
+			log.Fatal("The container ID not specified")
+		}
+		err := doDelete(containerID)
 		if err != nil {
 			log.Fatal(err)
 		}
