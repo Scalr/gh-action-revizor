@@ -83,7 +83,7 @@ func doCreate() error {
 	// Such a large timeout due to the fact that sometimes
 	// the result of creating a container cannot be obtained
 	// for a long time on the server side.
-	client := &http.Client{Timeout: 600 * time.Second}
+	client := &http.Client{Timeout: 120 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
