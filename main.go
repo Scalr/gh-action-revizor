@@ -26,7 +26,7 @@ var (
 
 func getEnv(key string) string {
 	value, present := os.LookupEnv(key)
-	if !present {
+	if !present || len(value) == 0 {
 		log.Fatalf("No required environment variable: %s", key)
 		return ""
 	}
