@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -75,11 +76,36 @@ func doHealthCheck(containerID *string) error {
 
 func doCreate() error {
 	log.Println("Creating the container...")
-	req := newRequest("POST", "/api/containers/", &map[string]interface{}{
-		// Provider tests do not require an interface,
-		// so we can speed up the container creation.
-		"skip_ui": true,
-	})
+	createOptions := make(map[string]interface{})
+	// Provider tests do not require an UI,
+	// so we can speed up the container creation.
+	createOptions["skip_ui"] = true
+
+	// Setup revizor container branches
+	branch := os.Getenv("BRANCH")
+	apiBranch := os.Getenv("API_BRANCH")
+	dbBranch := os.Getenv("DB_BRANCH")
+	if len(apiBranch) != 0 {
+		b, err := strconv.ParseBool(apiBranch)
+		if err != nil {
+			log.Fatal("Cannot parse API_BRANCH value")
+		}
+		if b {
+			createOptions["fatmouse_branch"] = branch
+			log.Printf("The container will be created from %s API branch", branch)
+		}
+	}
+	if len(dbBranch) != 0 {
+		b, err := strconv.ParseBool(dbBranch)
+		if err != nil {
+			log.Fatal("Cannot parse DB_BRANCH value")
+		}
+		if b {
+			createOptions["scalr_branch"] = branch
+			log.Printf("The container will be created from %s DB branch", branch)
+		}
+	}
+	req := newRequest("POST", "/api/containers/", &createOptions)
 	// Such a large timeout due to the fact that sometimes
 	// the result of creating a container cannot be obtained
 	// for a long time on the server side.
@@ -87,6 +113,9 @@ func doCreate() error {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if resp.StatusCode != 201 {
+		log.Fatalf("Cannot create the container: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 	respBody, _ := ioutil.ReadAll(resp.Body)
@@ -96,6 +125,7 @@ func doCreate() error {
 		log.Fatal(err)
 	}
 	log.Printf("The container %s has been created", cont.ID)
+	// set-output: GitHub Action mechanism that sets the output parameter.
 	fmt.Printf("::set-output name=container_id::%s\n", cont.ID)
 	fmt.Printf("::set-output name=hostname::%s.%s\n", cont.ID, teBaseURL)
 	for i := 1; i <= 10; i++ {
