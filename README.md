@@ -1,6 +1,6 @@
 # revizor docker action
 
-This action `create|delete` the test environemnt container.
+This action `create|delete` the test environment container.
 
 To configure this action, you need to provide the following environment variables:
 - `REVIZOR_URL`: Revizor base url.
@@ -13,13 +13,13 @@ To configure this action, you need to provide the following environment variable
 
 **Required** The command to execute: `create|delete`.
 
-### `conatiner_id`
+### `container_id`
 
 **Optional** The container ID.
 
 ## Outputs
 
-### `conatiner_id`
+### `container_id`
 
 The container ID.
 
