@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -31,7 +30,7 @@ const (
 	// the result of creating a container cannot be obtained
 	// for a long time on the server side.
 	createTimeout         = 120 * time.Second
-	healthCheckMaxRetries = 10
+	healthCheckMaxRetries = 20
 	healthCheckRetryDelay = 1 * time.Second
 )
 
@@ -95,30 +94,16 @@ func doHealthCheck(containerID *string) error {
 
 func newCreateOptions() *createOptions {
 	options := &createOptions{SkipUI: true}
-
 	// Setup revizor container branches
-	branch := os.Getenv("BRANCH")
 	apiBranch := os.Getenv("API_BRANCH")
 	dbBranch := os.Getenv("DB_BRANCH")
 	if len(apiBranch) != 0 {
-		b, err := strconv.ParseBool(apiBranch)
-		if err != nil {
-			log.Fatal("Cannot parse API_BRANCH value")
-		}
-		if b {
-			options.FatmouseBranch = branch
-			log.Printf("The container will be created from %s API branch", branch)
-		}
+		options.FatmouseBranch = apiBranch
+		log.Printf("The container will be created from %s API branch", apiBranch)
 	}
 	if len(dbBranch) != 0 {
-		b, err := strconv.ParseBool(dbBranch)
-		if err != nil {
-			log.Fatal("Cannot parse DB_BRANCH value")
-		}
-		if b {
-			options.ScalrBranch = branch
-			log.Printf("The container will be created from %s DB branch", branch)
-		}
+		options.ScalrBranch = dbBranch
+		log.Printf("The container will be created from %s API branch", dbBranch)
 	}
 	return options
 }
