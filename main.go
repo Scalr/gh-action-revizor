@@ -99,11 +99,9 @@ func newCreateOptions() *createOptions {
 	dbBranch := os.Getenv("DB_BRANCH")
 	if len(apiBranch) != 0 {
 		options.FatmouseBranch = apiBranch
-		log.Printf("The container will be created from %s API branch", apiBranch)
 	}
 	if len(dbBranch) != 0 {
 		options.ScalrBranch = dbBranch
-		log.Printf("The container will be created from %s API branch", dbBranch)
 	}
 	return options
 }
@@ -113,7 +111,9 @@ func setOutputsfromCreate(cont *container) {
 	fmt.Printf("::set-output name=hostname::%s.%s\n", cont.ID, teBaseURL)
 }
 func doCreate(options *createOptions) error {
-	log.Println("Creating the container...")
+	optionsJSON, _ := json.Marshal(options)
+	log.Printf("Creating the container with options %s", string(optionsJSON))
+
 	req := newRequest("POST", "/api/containers/", options)
 	client := &http.Client{Timeout: createTimeout}
 	resp, err := client.Do(req)
