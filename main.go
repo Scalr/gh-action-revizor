@@ -3,13 +3,13 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -72,22 +72,34 @@ func newRequest(method, path string, payload *createOptions) *http.Request {
 	return req
 }
 
+type HealthCheckError struct {
+	StatusCode int
+	Err        error
+}
+
+func (r *HealthCheckError) Error() string {
+	return fmt.Sprintf("Health check errror. Status %d: %v", r.StatusCode, r.Err)
+}
+
 func doHealthCheck(containerID *string) error {
-	// TODO: use ping endpoint within stable profile
-	url := fmt.Sprintf("https://%s.%s/api/iacp/v3/environments", *containerID, teBaseURL)
+	url := fmt.Sprintf("https://%s.%s/api/iacp/v3/ping", *containerID, teBaseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", scalrToken))
-	req.Header.Set("Prefer", "profile=preview")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil || resp == nil {
-		return fmt.Errorf("The healthcheck error: %v", err)
+		return &HealthCheckError{
+			Err: fmt.Errorf("ping %s %v", url, err),
+		}
 	}
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("The healthcheck error: %s", resp.Status)
+	if resp.StatusCode != 204 {
+		return &HealthCheckError{
+			Err:        fmt.Errorf("ping %s not successful", url),
+			StatusCode: resp.StatusCode,
+		}
 	}
 	log.Printf("The container %s is ready for use", *containerID)
 	return nil
@@ -95,40 +107,28 @@ func doHealthCheck(containerID *string) error {
 
 func newCreateOptions() *createOptions {
 	options := &createOptions{SkipUI: true}
-
 	// Setup revizor container branches
-	branch := os.Getenv("BRANCH")
 	apiBranch := os.Getenv("API_BRANCH")
 	dbBranch := os.Getenv("DB_BRANCH")
 	if len(apiBranch) != 0 {
-		b, err := strconv.ParseBool(apiBranch)
-		if err != nil {
-			log.Fatal("Cannot parse API_BRANCH value")
-		}
-		if b {
-			options.FatmouseBranch = branch
-			log.Printf("The container will be created from %s API branch", branch)
-		}
+		options.FatmouseBranch = apiBranch
 	}
 	if len(dbBranch) != 0 {
-		b, err := strconv.ParseBool(dbBranch)
-		if err != nil {
-			log.Fatal("Cannot parse DB_BRANCH value")
-		}
-		if b {
-			options.ScalrBranch = branch
-			log.Printf("The container will be created from %s DB branch", branch)
-		}
+		options.ScalrBranch = dbBranch
 	}
 	return options
 }
+
 func setOutputsfromCreate(cont *container) {
 	// set-output: GitHub Action mechanism that sets the output parameter.
 	fmt.Printf("::set-output name=container_id::%s\n", cont.ID)
 	fmt.Printf("::set-output name=hostname::%s.%s\n", cont.ID, teBaseURL)
 }
-func doCreate(options *createOptions) error {
-	log.Println("Creating the container...")
+
+func doCreate(options *createOptions, retry bool) error {
+	optionsJSON, _ := json.Marshal(options)
+	log.Printf("Creating the container with options %s", string(optionsJSON))
+
 	req := newRequest("POST", "/api/containers/", options)
 	client := &http.Client{Timeout: createTimeout}
 	resp, err := client.Do(req)
@@ -150,9 +150,12 @@ func doCreate(options *createOptions) error {
 	}
 	log.Printf("The container %s has been created", cont.ID)
 	setOutputsfromCreate(&cont)
+
+	var healthCheckErr *HealthCheckError
 	for i := 1; i <= healthCheckMaxRetries; i++ {
 		err := doHealthCheck(&cont.ID)
 		if err != nil {
+			healthCheckErr = err.(*HealthCheckError)
 			log.Println(err)
 			time.Sleep(healthCheckRetryDelay)
 		} else {
@@ -163,7 +166,13 @@ func doCreate(options *createOptions) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return fmt.Errorf("The container %s was unavailable and was deleted", cont.ID)
+	// For unknown reasons, sometimes we can't find the container we created,
+	// so we try again to create a container.
+	if retry && healthCheckErr.StatusCode == 404 {
+		return doCreate(options, false)
+	} else {
+		return errors.New("Cannot create container")
+	}
 }
 
 func doDelete(containerID string) error {
@@ -187,7 +196,7 @@ func main() {
 
 	switch cmd {
 	case "create":
-		err := doCreate(newCreateOptions())
+		err := doCreate(newCreateOptions(), true)
 		if err != nil {
 			log.Fatal(err)
 		}
