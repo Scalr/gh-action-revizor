@@ -31,8 +31,8 @@ const (
 	// the result of creating a container cannot be obtained
 	// for a long time on the server side.
 	createTimeout         = 120 * time.Second
-	healthCheckMaxRetries = 10
-	healthCheckRetryDelay = 1 * time.Second
+	healthCheckMaxRetries = 30
+	healthCheckRetryDelay = 3 * time.Second
 )
 
 var (
