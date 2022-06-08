@@ -30,7 +30,7 @@ const (
 	// Such a large timeout due to the fact that sometimes
 	// the result of creating a container cannot be obtained
 	// for a long time on the server side.
-	createTimeout         = 120 * time.Second
+	createTimeout         = 360 * time.Second
 	healthCheckMaxRetries = 30
 	healthCheckRetryDelay = 3 * time.Second
 )
