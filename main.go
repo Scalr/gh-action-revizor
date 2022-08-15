@@ -23,6 +23,7 @@ type createOptions struct {
 	SkipUI         bool   `json:"skip_ui"`
 	FatmouseBranch string `json:"fatmouse_branch,omitempty"`
 	ScalrBranch    string `json:"scalr_branch,omitempty"`
+	Notes          string `json:"notes"`	
 }
 
 const (
@@ -39,6 +40,7 @@ var (
 	revizorBaseURL = getEnv("REVIZOR_URL")
 	revizorToken   = getEnv("REVIZOR_TOKEN")
 	scalrToken     = getEnv("SCALR_TOKEN")
+	upstreamID     = getEnv("UPSTREAM_ID")
 )
 
 func getEnv(key string) string {
@@ -106,7 +108,10 @@ func doHealthCheck(containerID *string) error {
 }
 
 func newCreateOptions() *createOptions {
-	options := &createOptions{SkipUI: true}
+	options := &createOptions{
+		SkipUI: true,
+		Notes: fmt.Sprintf("Provider upstream #%s", upstreamID),
+	}
 	// Setup revizor container branches
 	apiBranch := os.Getenv("API_BRANCH")
 	dbBranch := os.Getenv("DB_BRANCH")
