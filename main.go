@@ -86,6 +86,9 @@ func (r *HealthCheckError) Error() string {
 func doHealthCheck(containerID *string) error {
 	url := fmt.Sprintf("https://%s.%s/api/iacp/v3/ping", *containerID, teBaseURL)
 	req, err := http.NewRequest("GET", url, nil)
+	statuses := [2]int{200, 204}
+	var ok bool = false
+	
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,12 +100,20 @@ func doHealthCheck(containerID *string) error {
 			Err: fmt.Errorf("ping %s %v", url, err),
 		}
 	}
-	if resp.StatusCode != 204 {
+	
+	for _, x := range statuses {
+		if resp.StatusCode == x {
+			ok = true
+			break
+		}
+	}
+	if ok == false {
 		return &HealthCheckError{
 			Err:        fmt.Errorf("ping %s not successful", url),
 			StatusCode: resp.StatusCode,
 		}
 	}
+
 	log.Printf("The container %s is ready for use", *containerID)
 	return nil
 }
