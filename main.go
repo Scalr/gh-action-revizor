@@ -24,7 +24,7 @@ type createOptions struct {
 	FatmouseBranch string `json:"fatmouse_branch,omitempty"`
 	ScalrBranch    string `json:"scalr_branch,omitempty"`
 	Notes          string `json:"notes"`
-	Python         bool   `json:"python"`
+	Python         bool   `json:"update_python"`
 }
 
 const (
