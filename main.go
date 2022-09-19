@@ -108,7 +108,7 @@ func doHealthCheck(containerID *string) error {
 			break
 		}
 	}
-	if ok == false {
+	if !ok {
 		return &HealthCheckError{
 			Err:        fmt.Errorf("ping %s not successful", url),
 			StatusCode: resp.StatusCode,
