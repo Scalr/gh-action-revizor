@@ -23,7 +23,8 @@ type createOptions struct {
 	SkipUI         bool   `json:"skip_ui"`
 	FatmouseBranch string `json:"fatmouse_branch,omitempty"`
 	ScalrBranch    string `json:"scalr_branch,omitempty"`
-	Notes          string `json:"notes"`	
+	Notes          string `json:"notes"`
+	Python         bool   `json:"python"`
 }
 
 const (
@@ -88,7 +89,7 @@ func doHealthCheck(containerID *string) error {
 	req, err := http.NewRequest("GET", url, nil)
 	statuses := [2]int{200, 204}
 	var ok bool = false
-	
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,14 +101,14 @@ func doHealthCheck(containerID *string) error {
 			Err: fmt.Errorf("ping %s %v", url, err),
 		}
 	}
-	
+
 	for _, x := range statuses {
 		if resp.StatusCode == x {
 			ok = true
 			break
 		}
 	}
-	if ok == false {
+	if !ok {
 		return &HealthCheckError{
 			Err:        fmt.Errorf("ping %s not successful", url),
 			StatusCode: resp.StatusCode,
@@ -121,17 +122,19 @@ func doHealthCheck(containerID *string) error {
 func newCreateOptions() *createOptions {
 	options := &createOptions{
 		SkipUI: true,
-		Notes: fmt.Sprintf("Provider upstream #%s", upstreamID),
+		Notes:  fmt.Sprintf("Provider upstream #%s", upstreamID),
 	}
 	// Setup revizor container branches
 	apiBranch := os.Getenv("API_BRANCH")
 	dbBranch := os.Getenv("DB_BRANCH")
+	python := os.Getenv("PY_REQ")
 	if len(apiBranch) != 0 {
 		options.FatmouseBranch = apiBranch
 	}
 	if len(dbBranch) != 0 {
 		options.ScalrBranch = dbBranch
 	}
+	options.Python = python == "yes"
 	return options
 }
 
