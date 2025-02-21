@@ -139,9 +139,10 @@ func newCreateOptions() *createOptions {
 }
 
 func setOutputsfromCreate(cont *container) {
-	// set-output: GitHub Action mechanism that sets the output parameter.
-	fmt.Printf("::set-output name=container_id::%s\n", cont.ID)
-	fmt.Printf("::set-output name=hostname::%s.%s\n", cont.ID, teBaseURL)
+	// $GITHUB_OUTPUT: GitHub Action mechanism that sets the output parameter.
+	echo "{name}={value}" >> $GITHUB_OUTPUT
+	fmt.Printf("echo container_id=%s >> $GITHUB_OUTPUT\n", cont.ID)
+	fmt.Printf("echo hostname=%s.%s >> $GITHUB_OUTPUT\n", cont.ID, teBaseURL)
 }
 
 func doCreate(options *createOptions, retry bool) error {
