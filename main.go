@@ -140,7 +140,6 @@ func newCreateOptions() *createOptions {
 
 func setOutputsfromCreate(cont *container) {
 	// $GITHUB_OUTPUT: GitHub Action mechanism that sets the output parameter.
-	echo "{name}={value}" >> $GITHUB_OUTPUT
 	fmt.Printf("echo container_id=%s >> $GITHUB_OUTPUT\n", cont.ID)
 	fmt.Printf("echo hostname=%s.%s >> $GITHUB_OUTPUT\n", cont.ID, teBaseURL)
 }
